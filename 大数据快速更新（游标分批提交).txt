@@ -1,0 +1,69 @@
+--【避免回滚段过大】
+--删除索引，最后恢复索引
+--分批插入
+DECLARE
+CURSOR c1 IS 
+        SELECT ROWID row_id 
+          FROM ts_batchcode WHERE dr=0 
+          order by rowid;
+c_commit CONSTANT PLS_INTEGER := 10000;
+--CONSTANT 变量
+--PLS_INTEGER可以存储一个有符号的整形值
+BEGIN
+  FOR c1rec IN c1 LOOP
+        insert into tmp111 select * from ts_batchcode a
+          WHERE a.ROWID = c1rec.row_id;
+        IF (MOD(c1%ROWCOUNT,c_commit) = 0)
+        THEN
+          COMMIT;
+        END IF;
+  END LOOP;
+  COMMIT;
+END;
+/
+
+
+--分批update
+DECLARE
+CURSOR c1 IS 
+        SELECT ROWID row_id 
+          FROM CPCOLLECTION --更新目标表
+          order by rowid;
+c_commit CONSTANT PLS_INTEGER := 10000;
+--CONSTANT 变量
+--PLS_INTEGER可以存储一个有符号的整形值
+BEGIN
+  FOR c1rec IN c1 LOOP
+        update CPCOLLECTION a set ...... 
+        where ......
+          and a.rowid=c1rec.row_id;
+        IF (MOD(c1%ROWCOUNT,c_commit) = 0)
+        THEN
+          COMMIT;
+        END IF;
+  END LOOP;
+  COMMIT;
+END;
+/
+
+
+
+--分批删除gl_detail垃圾数据
+DECLARE
+CURSOR c1 IS 
+        SELECT /*+ parallel(gl_detail) */ ROWID row_id 
+          FROM gl_detail 
+          WHERE dr=1 order by rowid;
+c_commit CONSTANT PLS_INTEGER := 10000;
+BEGIN
+  FOR c1rec IN c1 LOOP
+        DELETE FROM gl_detail
+          WHERE ROWID = c1rec.row_id;
+        IF (MOD(c1%ROWCOUNT,c_commit) = 0)
+        THEN
+          COMMIT;
+        END IF;
+  END LOOP;
+  COMMIT;
+END;
+/

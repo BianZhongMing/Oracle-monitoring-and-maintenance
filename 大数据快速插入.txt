@@ -1,0 +1,16 @@
+删除索引
+数据量评估，确定分批字段
+测试插入
+分批插入
+校验
+恢复索引
+
+1.alter table TABLENAME nologging;--归档模式必须设置，最后logging
+2.insert /*+ Append */ into TABLENAME(......)  --和/*+ Append */  配合效果最好
+
+/*
+append只在insert … select …中起作用，像insert /*+ append */ into t values(…)这类的语句是不起作用的。在update、delete操作中，append也不起作用。
+*/
+
+--只有多次插入同一个表时才需要分批插入
+--若大表非要分批插入可以找到分布均衡的关键字，然后建立索引，在分批插入
